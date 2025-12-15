@@ -75,6 +75,7 @@ public:
     options.push_back (std::pair<std::string, std::string> (cfg_show_bookmarks_view, "false"));
     options.push_back (std::pair<std::string, std::string> (cfg_show_layer_panel, "true"));
     options.push_back (std::pair<std::string, std::string> (cfg_layout_file_watcher_enabled, "true"));
+    options.push_back (std::pair<std::string, std::string> (cfg_layout_auto_reload_enabled, "false"));
     options.push_back (std::pair<std::string, std::string> (cfg_window_state, ""));
     options.push_back (std::pair<std::string, std::string> (cfg_window_geometry, ""));
     options.push_back (std::pair<std::string, std::string> (cfg_key_bindings, ""));
@@ -197,6 +198,10 @@ MainConfigPage7::setup (lay::Dispatcher *root)
   root->config_get (cfg_layout_file_watcher_enabled, en);
   mp_ui->check_for_updates->setChecked (en);
 
+  bool auto_reload = false;
+  root->config_get (cfg_layout_auto_reload_enabled, auto_reload);
+  mp_ui->auto_reload_when_clean->setChecked (auto_reload);
+
   int kb = 0;
   root->config_get (cfg_keep_backups, kb);
   mp_ui->keep_backups->setValue (kb);
@@ -211,6 +216,7 @@ MainConfigPage7::commit (lay::Dispatcher *root)
 {
   try {
     root->config_set (cfg_layout_file_watcher_enabled, mp_ui->check_for_updates->isChecked ());
+    root->config_set (cfg_layout_auto_reload_enabled, mp_ui->auto_reload_when_clean->isChecked ());
     root->config_set (cfg_keep_backups, mp_ui->keep_backups->value ());
     root->config_set (cfg_always_exit_without_saving, mp_ui->always_exit_without_saving->isChecked ());
   } catch (...) { }

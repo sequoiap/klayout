@@ -722,6 +722,8 @@ protected:
   bool eventFilter (QObject *watched, QEvent *event);
 
 private:
+  bool is_file_ready_for_auto_reload (const QString &path);
+
   lay::Dispatcher m_dispatcher;
 
   TextProgressDelegate m_text_progress;
@@ -784,6 +786,7 @@ private:
   std::vector<std::pair<std::string, bool> > m_hidden;
   bool m_new_layout_current_panel;
   bool m_synchronized_views;
+  bool m_auto_reload_clean_files;
   bool m_synchronous;
   bool m_busy;
   QApplication *mp_app;
@@ -793,6 +796,7 @@ private:
   std::map<int, std::string> m_messages;
   std::unique_ptr<QPrinter> mp_printer;
   std::vector<QString> m_changed_files;
+  std::map<QString, qint64> m_pending_auto_reload_sizes;
   std::string m_title;
 
   //  the object manager (undo/redo mechanism and others)
