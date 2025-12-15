@@ -57,10 +57,17 @@
       <item row="0" column="0" colspan="2">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>If this option is enabled, the program will detect changes in layout files and ask whether to reload them.</string>
+         <string>If this option is enabled, the program will detect changes in layout files and ask whether to reload them. You can also enable automatic reloads for clean files.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QCheckBox" name="auto_reload_when_clean">
+        <property name="text">
+         <string>Automatically reload clean files once writing is finished</string>
         </property>
        </widget>
       </item>

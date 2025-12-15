@@ -183,6 +183,7 @@ MainWindow::MainWindow (QApplication *app, const char *name, bool undo_enabled)
       m_default_grids_updated (true),
       m_new_layout_current_panel (false),
       m_synchronized_views (false),
+      m_auto_reload_clean_files (false),
       m_synchronous (false),
       m_busy (false),
       mp_app (app),
@@ -586,6 +587,32 @@ MainWindow::dock_widget_visibility_changed (bool visible)
   }
 }
 
+bool
+MainWindow::is_file_ready_for_auto_reload (const QString &path)
+{
+  QFileInfo info (path);
+  if (!info.exists ()) {
+    m_pending_auto_reload_sizes.erase (path);
+    return false;
+  }
+
+  qint64 size = info.size ();
+
+  auto pending = m_pending_auto_reload_sizes.find (path);
+  if (pending == m_pending_auto_reload_sizes.end ()) {
+    m_pending_auto_reload_sizes.insert (std::make_pair (path, size));
+    return false;
+  }
+
+  if (pending->second == size) {
+    m_pending_auto_reload_sizes.erase (pending);
+    return true;
+  }
+
+  pending->second = size;
+  return false;
+}
+
 void
 MainWindow::file_changed_timer ()
 {
@@ -629,6 +656,32 @@ MainWindow::file_changed_timer ()
     auto v = views_per_file.find (*f);
     if (v != views_per_file.end ()) {
 
+      bool auto_reload = m_auto_reload_clean_files;
+      if (auto_reload) {
+        for (auto w = v->second.begin (); w != v->second.end () && auto_reload; ++w) {
+          auto cv = w->first->view ()->cellview (w->second);
+          if (cv->is_dirty ()) {
+            auto_reload = false;
+          }
+        }
+      }
+
+      if (auto_reload) {
+        if (is_file_ready_for_auto_reload (*f)) {
+          for (auto w = v->second.begin (); w != v->second.end (); ++w) {
+            w->first->view ()->reload_layout (w->second);
+          }
+          continue;
+        } else if (QFileInfo (*f).exists ()) {
+          m_changed_files.push_back (*f);
+          continue;
+        } else {
+          auto_reload = false;
+        }
+      }
+
+      m_pending_auto_reload_sizes.erase (*f);
+
       for (auto w = v->second.begin (); w != v->second.end (); ++w) {
 
         std::string title;
@@ -646,6 +699,11 @@ MainWindow::file_changed_timer ()
 
     }
 
+  }
+
+  if (! m_changed_files.empty ()) {
+    m_file_changed_timer.setInterval (200);
+    m_file_changed_timer.start ();
   }
 }
 
@@ -1217,6 +1275,11 @@ MainWindow::configure (const std::string &name, const std::string &value)
     bool flag = false;
     tl::from_string (value, flag);
     lay::LayoutHandle::file_watcher ().enable (flag);
+    return true;
+
+  } else if (name == cfg_layout_auto_reload_enabled) {
+
+    tl::from_string (value, m_auto_reload_clean_files);
     return true;
 
   } else if (name == cfg_key_bindings) {
